@@ -1,9 +1,12 @@
-"""Gridworld MDP formulation and utilities for the 3x4 delivery robot task."""
+"""Gridworld MDP formulation for the 4x3 robot problem using (x, y) states.
+
+Coordinates follow the assignment convention: (1,1) is bottom-left.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, List, Tuple
 
 State = Tuple[int, int]
 Action = str
@@ -11,17 +14,17 @@ Action = str
 
 @dataclass(frozen=True)
 class GridworldMDP:
-    """3x4 stochastic gridworld with one wall and two terminal states."""
+    """4x3 stochastic gridworld with one wall and two terminal states."""
 
-    n_rows: int = 3
     n_cols: int = 4
+    n_rows: int = 3
     wall: State = (2, 2)
     terminal_rewards: Dict[State, float] = None  # type: ignore[assignment]
     default_reward: float = -0.04
 
     def __post_init__(self) -> None:
         if self.terminal_rewards is None:
-            object.__setattr__(self, "terminal_rewards", {(1, 4): 1.0, (2, 4): -1.0})
+            object.__setattr__(self, "terminal_rewards", {(4, 3): 1.0, (4, 2): -1.0})
 
     @property
     def action_space(self) -> Tuple[Action, Action, Action, Action]:
@@ -30,10 +33,10 @@ class GridworldMDP:
     @property
     def all_states(self) -> List[State]:
         return [
-            (r, c)
-            for r in range(1, self.n_rows + 1)
-            for c in range(1, self.n_cols + 1)
-            if (r, c) != self.wall
+            (x, y)
+            for y in range(1, self.n_rows + 1)
+            for x in range(1, self.n_cols + 1)
+            if (x, y) != self.wall
         ]
 
     @property
@@ -44,22 +47,22 @@ class GridworldMDP:
         return self.terminal_rewards.get(state, self.default_reward)
 
     def is_inside(self, state: State) -> bool:
-        r, c = state
-        return 1 <= r <= self.n_rows and 1 <= c <= self.n_cols
+        x, y = state
+        return 1 <= x <= self.n_cols and 1 <= y <= self.n_rows
 
     def move(self, state: State, action: Action) -> State:
         if state in self.terminal_rewards:
             return state
 
-        r, c = state
+        x, y = state
         deltas = {
-            "North": (-1, 0),
-            "South": (1, 0),
-            "East": (0, 1),
-            "West": (0, -1),
+            "North": (0, 1),
+            "South": (0, -1),
+            "East": (1, 0),
+            "West": (-1, 0),
         }
-        dr, dc = deltas[action]
-        candidate = (r + dr, c + dc)
+        dx, dy = deltas[action]
+        candidate = (x + dx, y + dy)
         if (not self.is_inside(candidate)) or candidate == self.wall:
             return state
         return candidate
